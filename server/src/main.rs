@@ -14,6 +14,11 @@ struct Payload {
     num: f64,
     message: String,
 }
+#[derive(Debug, Serialize, Deserialize)]
+struct WebSocketMessage {
+    topic: String,
+    payload: Payload,
+}   
 
 async fn accept_connection(peer: SocketAddr, stream: TcpStream) {
     if let Err(e) = handle_connection(peer, stream).await {
@@ -48,12 +53,14 @@ async fn handle_connection(peer: SocketAddr, stream: TcpStream) -> Result<()> {
                 }
             }
             _ = interval.tick() => {
-                let payload = Payload {
-                    num: random(),
-                    message: "Hello, world!".to_string(),
+                let websocket_message = WebSocketMessage {
+                    topic: "random".to_string(),
+                    payload: Payload {
+                        num: random(),
+                        message: "Hello, world!".to_string(),
+                    },
                 };
-                let encoded_payload = serde_json::to_string(&payload).unwrap();
-                ws_sender.send(Message::Text(encoded_payload)).await?;
+                ws_sender.send(Message::Text(serde_json::to_string(&websocket_message).unwrap())).await?;
             }
         }
     }
